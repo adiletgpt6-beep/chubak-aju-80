@@ -1,0 +1,35 @@
+name: Catalog YouTube playlist (metadata only)
+on:
+  workflow_dispatch:
+    inputs:
+      playlist_url:
+        description: 'YouTube playlist URL'
+        required: true
+        default: 'https://www.youtube.com/playlist?list=PLC-unxVGahSmS7NuDTU4m8L-9eEgCYMXa'
+      limit:
+        description: 'Number of entries (first batch: 10)'
+        required: true
+        default: '10'
+permissions:
+  contents: read
+jobs:
+  catalog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install metadata extractor
+        run: python -m pip install 'yt-dlp>=2025.1'
+      - name: Fetch metadata (no media downloads)
+        env:
+          PLAYLIST_URL: ${{ inputs.playlist_url }}
+          LIMIT: ${{ inputs.limit }}
+        run: python scripts/catalog_playlist.py --url "$PLAYLIST_URL" --limit "$LIMIT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: playlist-catalog
+          path: data/catalog/first-10.json
+          retention-days: 30
